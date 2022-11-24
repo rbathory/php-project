@@ -1,8 +1,32 @@
 <?php
 SESSION_start();
+
+mysqli_report(MYSQLI_REPORT_STRICT);
+
+
+$db = initDb();
+
+if (isset($_POST['login'])) {
+    login();
+}
+if (isset($_GET['logout']))
+{
+    logout();
+    header("Location: akasztofa.php");
+}
+
+if (!isset($_SESSION['user'])) {
+    print_login_form();
+    closedb($db);
+    exit(0);
+}
+
+
 mb_internal_encoding('UTF-8');
+print '<P ALIGN="RIGHT"><A href="?logout">Kilépés</A>';
 print '<center>';
 $done = false;
+
 
 if (!array_key_exists('szavak', $_SESSION)) {
     print("Beolvasom" . '<br>');
@@ -104,6 +128,50 @@ function init($szavak)
     $_SESSION['has'] = str_repeat('_', mb_strlen($_SESSION['szo'], 'UTF-8'));
     $_SESSION['prob'] = 0;
 }
+
+function print_login_form()
+{
+    echo '<Center><H2>Belépés</H2>
+<FORM NAME="loginform" method="POST">
+	Felhasználónév<BR><INPUT TYPE="text" name="username"><p>
+	Jelszó<BR><INPUT TYPE="password" name="password"><P>
+	<INPUT TYPE="submit" name="login" value="Belépés">
+</FORM></Center>';
+}
+
+function login()
+{
+    global $db;
+    $username = $_POST['username'];
+    $password_hash = hash('sha256', $_POST['password']);
+    $sql = 'SELECT role FROM `users` WHERE username="' . $username . '" and password="' . $password_hash . '" ';
+    $result = mysqli_query($db, $sql);
+    if (mysqli_num_rows($result) != 1) {
+        echo '<FONT COLOR="red"><B>Sikertelen belépés</B></FONT><P>';
+        return;
+    }
+    $role = mysqli_fetch_assoc($result)['role'];
+    $_SESSION['role'] = $role;
+    $_SESSION['user'] = $username;
+
+}
+
+function logout()
+{
+    unset($_SESSION['role']);
+    unset($_SESSION['user']);
+}
+
+function initDb()
+{
+    return mysqli_connect('79.139.60.134', 'rozi', 'jasjkkjLJIJ_1231kJ', 'phpdb');
+}
+
+function closeDb($db)
+{
+    mysqli_close($db);
+}
+
 
 print '</center>';
 ?>
