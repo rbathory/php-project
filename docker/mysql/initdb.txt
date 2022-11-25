@@ -1,0 +1,20 @@
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `users` (
+                         `username` varchar(20) NOT NULL,
+                         `password` varchar(64) NOT NULL,
+                         `role` varchar(10) DEFAULT NULL,
+                         PRIMARY KEY (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `users`
+--
+
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES ('bela','b6ae2846c5e278dcac65e64d3d4739edb2bb280cf047216a7eff07d45e85c173','user'),('rozi','d0d535516c387988eb4e6554874a4a7a5f8fb130e2568eb91982a40ec96d40fb','admin');
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
