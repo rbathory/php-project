@@ -1,90 +1,28 @@
 <?php
 SESSION_start();
+require "functions.php";
 
 mysqli_report(MYSQLI_REPORT_STRICT);
 
-
-$db = initDb();
-
-if (isset($_POST['login'])) {
-    login();
-    echo 'Üdv az oldalon: '.$_POST['username'].'<BR>';
-    if ($_SESSION['role']=='admin'){
-        echo '<A href="?add=on">Új felhasználó</A><BR>';
-        $sql='SELECT username as `user`, password as `pass`, role FROM `users`';
-        $result=mysqli_query($db,$sql);
-        while ($row=mysqli_fetch_assoc($result)){
-            echo $row['user'].'<A href="?mod=on&user='.$row['user'].'"> Módosítás</A><BR>';
-        }
-    }	else {
-        $sql='SELECT username as `user`, password as `pass` FROM `users` WHERE username="'.$_SESSION['user'].'"';
-        $result=mysqli_query($db,$sql);
-        $row=mysqli_fetch_assoc($result);
-        echo $row['user'].'<A href="?mod=on&user='.$row['user'].'"> Módosítás</A><BR>';
-
-
-    }
+if (!is_logged_in()) {
+    redirect("login.php");
 }
-if (isset($_GET['logout']))
-{
+
+if (isset($_GET['logout'])) {
     logout();
-    header("Location: akasztofa.php");
 }
+$db = initDb();
+$d_scores = get_stats(true);
+$t_scores = get_stats(false);
+echo 'Üdv az oldalon: ' . $_SESSION['user'] . '<BR>';
 
-if (!isset($_SESSION['user'])) {
-    print_login_form();
-    closedb($db);
-    exit(0);
-}
-
-if(isset($_GET['add']) &&  $_GET['add'] =='on' && $_SESSION['rule']=='admin'){ // új felhasználó form
-    echo '<FORM NAME="form1" action="akasztofa.php" method="POST">
-	<INPUT TYPE="text" name="user">
-	<INPUT TYPE="text" name="pass">
-	<INPUT TYPE="text" name="role">
-	<INPUT TYPE="submit" name="add" value="Létrehoz">
-	</FORM>';
-}
-
-if (isset($_POST['add']) && $_SESSION['rule']=='admin'){ // új felhasználó adat hozzáadás
-    $sql='INSERT INTO `users` SET username="'.$_POST['user'].'", password="'.$_POST['pass'].'", role="'.$_POST['role'].'"'; //????
-    if (mysqli_query($db,$sql)){
-        echo '<B>Sikeres felvitel</B><BR>';
-    } else {
-        echo '<B>HIBA</B><BR>';
-    }
-}
-
-if(isset($_GET['mod']) &&  $_GET['mod'] =='on'){ // módosítás form
-    if ($_SESSION['role']=='admin'){
-        $sql='SELECT * FROM `user` WHERE nev="'.$_GET['user'].'"';
-    } else { // az aktuális userre keressen
-        $sql='SELECT * FROM `user` WHERE nev="'.$_SESSION['user'].'"';
-    }
-    $result=mysqli_query($db,$sql);
-    $row=mysqli_fetch_assoc($result);
-    echo '<FORM NAME="form1" action="akasztofa.php?user='.$_GET['user'].'" method="POST">
-	<INPUT TYPE="text" name="user" value="'.$row['nev'].'">
-	<INPUT TYPE="text" name="pass" value="'.$row['jelszo'].'">
-	<INPUT TYPE="submit" name="mod" value="Módosít">
-	</FORM>';
-}
-// ha a felhasználó módosítás formot elküljük, akkor ezáltal modosítsuk az adatokat (a post tömbben az új adatok, a get-ben a régi adat található, ami alapján modosítunk)
-if (isset($_POST['mod'])){
-    if ($_SESSION['jog']==1){
-        $sql='UPDATE `user` SET nev="'.$_POST['user'].'", jelszo="'.$_POST['pass'].'" WHERE nev="'.$_GET['user'].'"';
-    } else {
-        $sql='UPDATE `user` SET nev="'.$_POST['user'].'", jelszo="'.$_POST['pass'].'" WHERE nev="'.$_SESSION['name'].'"';
-    }
-    if (mysqli_query($db,$sql)){
-        echo '<B>Sikeres módosítás</B><BR>';
-    } else {
-        echo '<B>HIBA</B><BR>';
-    }
-}
 
 mb_internal_encoding('UTF-8');
-print '<P ALIGN="RIGHT"><A href="?logout">Kilépés</A>';
+print '<P ALIGN="RIGHT">';
+if (is_admin()) {
+    print '<A href="admin.php" style="margin-right: 10px">Admin oldalra</A>';
+}
+print '<A href="?logout">Kilépés</A>';
 print '<center>';
 $done = false;
 
@@ -104,7 +42,7 @@ if (!array_key_exists('szavak', $_SESSION)) {
     }
     $_SESSION['szavak'] = $szavak;
     init($szavak); // újratöltésnél újrakezd
-    $_SESSION['gyozelmek']=0;
+    $_SESSION['gyozelmek'] = 0;
 }
 
 
@@ -149,8 +87,8 @@ if (isset($_POST["submit"])) // beküldök egy tippet
                 $_SESSION['has'] = $has;
             }
             if ($has == $szo) {
-                print 'Kitaláltad a keresett szót :)'.'<br>';
-                $_SESSION['gyozelmek']+=1;
+                print 'Kitaláltad a keresett szót :)' . '<br>';
+                update_games(true);
                 $done = true;
 
             }
@@ -164,14 +102,17 @@ if (isset($_POST["submit"])) // beküldök egy tippet
 }
 
 print('<img src="images/kep' . $hiba . '.png">') . '<br>';
+
 if ($hiba >= 10) {
     print 'Felakasztottak, vesztettél :(';
+    update_games(false);
+
     $done = true;
 }
 print ('<H1 style="letter-spacing: 5px">' . $has . '</H1>');
 print 'Tippek: ' . join(", ", $_SESSION['tippek']) . '<br>';
 print 'Próbálkozások száma: ' . $_SESSION['prob'] . '<br>';
-print "<div style='color: blue; font-weight: bold'>Győzelmek száma: </div>".$_SESSION['gyozelmek'];
+print "<div style='color: blue; font-weight: bold'>Győzelmek száma: </div>" . $_SESSION['gyozelmek'];
 print '<BR><a href ="akasztofa.php?new=on"> Új szó </a>';
 
 if (!$done) {
@@ -180,6 +121,14 @@ if (!$done) {
     <INPUT type="submit" name="submit" value="Próbál">
     </FORM>';
 }
+
+print "<P>";
+print_scores(true);
+print_scores(false);
+
+print '</center>';
+closeDb($db);
+##################################################################x
 
 /**
  * ez a függvény azt csinálja, hogy
@@ -195,50 +144,53 @@ function init($szavak)
     $_SESSION['prob'] = 0;
 }
 
-function print_login_form()
-{
-    echo '<Center><H2>Belépés</H2>
-<FORM NAME="loginform" method="POST">
-	Felhasználónév<BR><INPUT TYPE="text" name="username"><p>
-	Jelszó<BR><INPUT TYPE="password" name="password"><P>
-	<INPUT TYPE="submit" name="login" value="Belépés">
-</FORM></Center>';
-}
 
-function login()
+function update_games($won)
 {
     global $db;
-    $username = $_POST['username'];
-    $password_hash = hash('sha256', $_POST['password']);
-    $sql = 'SELECT role FROM `users` WHERE username="' . $username . '" and password="' . $password_hash . '" ';
-    $result = mysqli_query($db, $sql);
-    if (mysqli_num_rows($result) != 1) {
-        echo '<FONT COLOR="red"><B>Sikertelen belépés</B></FONT><P>';
-        return;
+    $user = $_SESSION['user'];
+    $today = date("Y-m-d");
+    $sql = $won ?
+        "INSERT INTO games values('$user','$today',1,0)" :
+        "INSERT INTO games values('$user','$today',0,1)";
+    mysqli_query($db, $sql);
+}
+
+function print_scores($daily)
+{
+    $records = get_stats($daily);
+    $type = $daily ? "Napi" : "Örök";
+
+    print "<H3>$type rangsor</H3>";
+    print "<TABLE border='1px'>";
+    foreach ($records as $line) {
+        print "<TR><TD>{$line[0]}</TD><TD>{$line[1]}/{$line[2]}</TD></TR>\n";
     }
-    $role = mysqli_fetch_assoc($result)['role'];
-    $_SESSION['role'] = $role;
-    $_SESSION['user'] = $username;
-
+    print "</TABLE><P>";
 }
 
-function logout()
+function get_stats($daily)
 {
-    unset($_SESSION['role']);
-    unset($_SESSION['user']);
+    global $db;
+    $today = date("Y-m-d");
+    $condition = $daily ? "where day=STR_TO_DATE('{$today}','%Y-%m-%d') " : "";
+    $sql = "select username, SUM(WON) as wins ,SUM(LOST)+SUM(WON) as total from games {$condition}group by username";
+
+    $result = mysqli_query($db, $sql);
+    $records = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $records[] = [$row['username'], $row['wins'], $row['total']];
+    }
+    usort($records, 'cmp_stats');
+    return $records;
 }
 
-function initDb()
+function cmp_stats($a, $b) # nyerési arány szerint
 {
-    return mysqli_connect('79.139.60.134', 'rozi', 'jasjkkjLJIJ_1231kJ', 'phpdb');
+    $r1 = $a[1] / $a[2];
+    $r2 = $b[1] / $b[2];
+    if ($r1 == $r2) return 0;
+    return $r1 < $r2 ? 1 : -1;
 }
 
-function closeDb($db)
-{
-    mysqli_close($db);
-}
-
-
-print '</center>';
-?>
 
