@@ -8,6 +8,22 @@ $db = initDb();
 
 if (isset($_POST['login'])) {
     login();
+    echo 'Üdv az oldalon: '.$_POST['username'].'<BR>';
+    if ($_SESSION['role']=='admin'){
+        echo '<A href="?add=on">Új felhasználó</A><BR>';
+        $sql='SELECT username as `user`, password as `pass`, role FROM `users`';
+        $result=mysqli_query($db,$sql);
+        while ($row=mysqli_fetch_assoc($result)){
+            echo $row['user'].'<A href="?mod=on&user='.$row['user'].'"> Módosítás</A><BR>';
+        }
+    }	else {
+        $sql='SELECT username as `user`, password as `pass` FROM `users` WHERE username="'.$_SESSION['user'].'"';
+        $result=mysqli_query($db,$sql);
+        $row=mysqli_fetch_assoc($result);
+        echo $row['user'].'<A href="?mod=on&user='.$row['user'].'"> Módosítás</A><BR>';
+
+
+    }
 }
 if (isset($_GET['logout']))
 {
@@ -21,6 +37,51 @@ if (!isset($_SESSION['user'])) {
     exit(0);
 }
 
+if(isset($_GET['add']) &&  $_GET['add'] =='on' && $_SESSION['rule']=='admin'){ // új felhasználó form
+    echo '<FORM NAME="form1" action="akasztofa.php" method="POST">
+	<INPUT TYPE="text" name="user">
+	<INPUT TYPE="text" name="pass">
+	<INPUT TYPE="text" name="role">
+	<INPUT TYPE="submit" name="add" value="Létrehoz">
+	</FORM>';
+}
+
+if (isset($_POST['add']) && $_SESSION['rule']=='admin'){ // új felhasználó adat hozzáadás
+    $sql='INSERT INTO `users` SET username="'.$_POST['user'].'", password="'.$_POST['pass'].'", role="'.$_POST['role'].'"'; //????
+    if (mysqli_query($db,$sql)){
+        echo '<B>Sikeres felvitel</B><BR>';
+    } else {
+        echo '<B>HIBA</B><BR>';
+    }
+}
+
+if(isset($_GET['mod']) &&  $_GET['mod'] =='on'){ // módosítás form
+    if ($_SESSION['role']=='admin'){
+        $sql='SELECT * FROM `user` WHERE nev="'.$_GET['user'].'"';
+    } else { // az aktuális userre keressen
+        $sql='SELECT * FROM `user` WHERE nev="'.$_SESSION['user'].'"';
+    }
+    $result=mysqli_query($db,$sql);
+    $row=mysqli_fetch_assoc($result);
+    echo '<FORM NAME="form1" action="akasztofa.php?user='.$_GET['user'].'" method="POST">
+	<INPUT TYPE="text" name="user" value="'.$row['nev'].'">
+	<INPUT TYPE="text" name="pass" value="'.$row['jelszo'].'">
+	<INPUT TYPE="submit" name="mod" value="Módosít">
+	</FORM>';
+}
+// ha a felhasználó módosítás formot elküljük, akkor ezáltal modosítsuk az adatokat (a post tömbben az új adatok, a get-ben a régi adat található, ami alapján modosítunk)
+if (isset($_POST['mod'])){
+    if ($_SESSION['jog']==1){
+        $sql='UPDATE `user` SET nev="'.$_POST['user'].'", jelszo="'.$_POST['pass'].'" WHERE nev="'.$_GET['user'].'"';
+    } else {
+        $sql='UPDATE `user` SET nev="'.$_POST['user'].'", jelszo="'.$_POST['pass'].'" WHERE nev="'.$_SESSION['name'].'"';
+    }
+    if (mysqli_query($db,$sql)){
+        echo '<B>Sikeres módosítás</B><BR>';
+    } else {
+        echo '<B>HIBA</B><BR>';
+    }
+}
 
 mb_internal_encoding('UTF-8');
 print '<P ALIGN="RIGHT"><A href="?logout">Kilépés</A>';
@@ -43,6 +104,7 @@ if (!array_key_exists('szavak', $_SESSION)) {
     }
     $_SESSION['szavak'] = $szavak;
     init($szavak); // újratöltésnél újrakezd
+    $_SESSION['gyozelmek']=0;
 }
 
 
@@ -62,6 +124,7 @@ function utf8_cserel($has, $i, $a)
 {
     return mb_substr($has, 0, $i) . $a . mb_substr($has, $i + 1);
 }
+
 
 if (isset($_POST["submit"])) // beküldök egy tippet
 {
@@ -86,7 +149,8 @@ if (isset($_POST["submit"])) // beküldök egy tippet
                 $_SESSION['has'] = $has;
             }
             if ($has == $szo) {
-                print 'Kitaláltad a keresett szót :)';
+                print 'Kitaláltad a keresett szót :)'.'<br>';
+                $_SESSION['gyozelmek']+=1;
                 $done = true;
 
             }
@@ -96,6 +160,7 @@ if (isset($_POST["submit"])) // beküldök egy tippet
     } else {
         print "<div style='color: red; font-weight: bold'>Nem megfelelő hosszúságú a tipped, egy betűt adjál meg!</div>";
     }
+
 }
 
 print('<img src="images/kep' . $hiba . '.png">') . '<br>';
@@ -106,6 +171,7 @@ if ($hiba >= 10) {
 print ('<H1 style="letter-spacing: 5px">' . $has . '</H1>');
 print 'Tippek: ' . join(", ", $_SESSION['tippek']) . '<br>';
 print 'Próbálkozások száma: ' . $_SESSION['prob'] . '<br>';
+print "<div style='color: blue; font-weight: bold'>Győzelmek száma: </div>".$_SESSION['gyozelmek'];
 print '<BR><a href ="akasztofa.php?new=on"> Új szó </a>';
 
 if (!$done) {
