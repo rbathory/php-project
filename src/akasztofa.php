@@ -117,7 +117,7 @@ print '<BR><a href ="akasztofa.php?new=on"> Új szó </a>';
 
 if (!$done) {
     print '<FORM NAME="form1" action="akasztofa.php" method="POST">
-    Tipp: <INPUT TYPE="text" name="tipp">
+    Tipp: <INPUT TYPE="text" name="tipp" autofocus>
     <INPUT type="submit" name="submit" value="Próbál">
     </FORM>';
 }

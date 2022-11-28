@@ -1,3 +1,13 @@
+DROP USER IF EXISTS `rozi`@`%`;
+DROP DATABASE IF EXISTS `phpdb`;
+
+CREATE USER `rozi`@`%` IDENTIFIED BY 'llALKOKO1_12-KnxO';
+CREATE DATABASE `phpdb`;
+GRANT USAGE ON *.* TO `rozi`@`%`;
+GRANT ALL PRIVILEGES ON `phpdb`.* TO `rozi`@`%`;
+
+use `phpdb`;
+
 DROP TABLE IF EXISTS `games`;
 DROP TABLE IF EXISTS `users`;
 
@@ -23,10 +33,8 @@ CREATE TABLE `games` (
 --
 
 LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` VALUES ('bela','b6ae2846c5e278dcac65e64d3d4739edb2bb280cf047216a7eff07d45e85c173','user'),('rozi','d0d535516c387988eb4e6554874a4a7a5f8fb130e2568eb91982a40ec96d40fb','admin');
-/*  rozi -> rozi123
-    bela -> bela123
+/*  rozi -> rozi1234
+    bela -> bela1234
 */;
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;

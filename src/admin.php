@@ -57,7 +57,7 @@ print '<CENTER>
 <H1>Admin oldal</H1>';
 if (has_error()) {
     print_error($_SESSION['errormessage']);
-    clear_error();
+    clear_error_message();
 }
 
 print '

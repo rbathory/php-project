@@ -21,13 +21,14 @@ function login()
     $result = mysqli_query($db, $sql);
     if (mysqli_num_rows($result) != 1) {
         closeDb($db);
-        $_SESSION['errormessage'] = 'Sikertelen belépés';
+        set_error_message('Sikertelen belépés');
         reload_page();
     }
     $role = mysqli_fetch_assoc($result)['role'];
     $_SESSION['role'] = $role;
     $_SESSION['user'] = $username;
     closeDb($db);
+    clear_error_message();
     goto_default();
 
 }

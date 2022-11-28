@@ -43,7 +43,7 @@ function has_error()
 {
     return isset($_SESSION['errormessage']);
 }
-function clear_error()
+function clear_error_message()
 {
     unset($_SESSION['errormessage']);
 }
