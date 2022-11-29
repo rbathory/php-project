@@ -5,7 +5,7 @@ $ROLES = array("admin" => "Admin", "user" => "Játékos");
 
 mysqli_report(MYSQLI_REPORT_STRICT);
 
-if (!is_logged_in()) {
+if (!is_logged_in()) { // ha nincs még belépve átirányítja
     redirect("login.php");
 }
 
@@ -16,13 +16,12 @@ if (isset($_GET['logout']))
 
 $db = initDb();
 
-if (!is_admin()) {
+if (!is_admin()) { // role vizsgálata a jogosultsághoz
     print_error("Nem jogosult az oldal használatához !");
     exit(0);
 }
 
-# ide jönnek az admin műveletek
-#
+// Admin műveletek:
 if (isset($_POST['add'])) { // új felhasználó adat hozzáadás
     if (user_exist($_POST['user'])) {
         set_error_message("A felhasználó már létezik!");
@@ -36,7 +35,7 @@ if (isset($_POST['add'])) { // új felhasználó adat hozzáadás
 }
 
 
-if (isset($_POST['del']) == 'true') { // felhasználó törlés
+if (isset($_POST['del']) == 'true') { // felhasználó törlése lehetséges e
     if (!user_exist($_POST['user'])) {
         set_error_message("Nincs ilyen felhasználó ");
     } elseif ($_POST['user'] == $_SESSION['user']) { # ön törlés nem lehetséges
@@ -44,8 +43,8 @@ if (isset($_POST['del']) == 'true') { // felhasználó törlés
     } else {
         delete_user($_POST['user']);
     }
-
 }
+
 if (isset($_POST['mod']) == 'true') { // felhasználó role mentés
     # TODO role ellenőrzés
     mod_user($_POST['user'], $_POST['role']);
@@ -59,7 +58,7 @@ if (has_error()) {
     print_error($_SESSION['errormessage']);
     clear_error_message();
 }
-
+// módosítás, törlés táblázat
 print '
 <TABLE BORDER="1px" CELLPADDING="5px">';
 $sql = 'SELECT username as `user`, role FROM `users`';
@@ -82,6 +81,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     print('</FORM></TR>');
 }
 
+// új felhasználó hozzáadása táblázat
 print '</TABLE>';
 print '<H2>Új felhasználó létrehozása:</H2>';
 print '<FORM autocomplete="off" method="POST">
@@ -98,6 +98,8 @@ print '<P>
 print "<A href='akasztofa.php'>Játszunk egyet mi is !</A>";
 print '</CENTER>';
 
+/** adatbázishoz új felhasználó adatok hozzáadása
+ */
 function add_user()
 {
     global $db;
@@ -109,6 +111,8 @@ function add_user()
     }
 }
 
+/** role megváltoztatása
+ */
 function mod_user($user, $role)
 {
     global $db;
@@ -120,6 +124,8 @@ function mod_user($user, $role)
 
 }
 
+/** felhasználó törlése az adatbázisból
+ */
 function delete_user($username)
 {
     global $db;
@@ -130,6 +136,8 @@ function delete_user($username)
     }
 }
 
+/** role választás (az alap az eredeti beállított)
+ */
 function print_role($selected)
 {
     global $ROLES;
@@ -145,6 +153,8 @@ function print_role($selected)
 
 }
 
+/** létezik e a felhasználó (adatbázis)
+ */
 function user_exist($username)
 {
     global $db;

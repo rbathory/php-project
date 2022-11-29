@@ -1,16 +1,17 @@
 <?php
 SESSION_start();
-require "functions.php";
+require "functions.php"; // másik php-hez csatlakozás
 
 mysqli_report(MYSQLI_REPORT_STRICT);
 
-if (!is_logged_in()) {
+if (!is_logged_in()) { // ha nincs belépve akkor automatikusan átdobja a login php-ra
     redirect("login.php");
 }
 
 if (isset($_GET['logout'])) {
     logout();
 }
+
 $db = initDb();
 $d_scores = get_stats(true);
 $t_scores = get_stats(false);
@@ -42,7 +43,7 @@ if (!array_key_exists('szavak', $_SESSION)) {
     }
     $_SESSION['szavak'] = $szavak;
     init($szavak); // újratöltésnél újrakezd
-    $_SESSION['gyozelmek'] = 0;
+    $_SESSION['gyozelmek'] = 0; // győzelem számláló elindítása
 }
 
 
@@ -88,8 +89,9 @@ if (isset($_POST["submit"])) // beküldök egy tippet
             }
             if ($has == $szo) {
                 print 'Kitaláltad a keresett szót :)' . '<br>';
-                update_games(true);
-                $done = true;
+                $_SESSION['gyozelmek'] =+1 ; // győzelmek számának növelése
+                update_games(true); //
+                $done = true; // győzelemnél 1 értéket ír az adatbázisba
 
             }
         } else {
@@ -105,16 +107,19 @@ print('<img src="images/kep' . $hiba . '.png">') . '<br>';
 
 if ($hiba >= 10) {
     print 'Felakasztottak, vesztettél :(';
-    update_games(false);
+    update_games(false); // veszítésnél 0 értéket ír az adatbázisba
 
     $done = true;
 }
+
 print ('<H1 style="letter-spacing: 5px">' . $has . '</H1>');
 print 'Tippek: ' . join(", ", $_SESSION['tippek']) . '<br>';
 print 'Próbálkozások száma: ' . $_SESSION['prob'] . '<br>';
 print "<div style='color: blue; font-weight: bold'>Győzelmek száma: </div>" . $_SESSION['gyozelmek'];
 print '<BR><a href ="akasztofa.php?new=on"> Új szó </a>';
 
+/** ameddig nem találja ki, addig tippelhet (form)
+ */
 if (!$done) {
     print '<FORM NAME="form1" action="akasztofa.php" method="POST">
     Tipp: <INPUT TYPE="text" name="tipp" autofocus>
@@ -130,10 +135,7 @@ print '</center>';
 closeDb($db);
 ##################################################################x
 
-/**
- * ez a függvény azt csinálja, hogy
- * @param $szavak
- * @return int
+/** kezdő értékek, tömbök létreghozása
  */
 function init($szavak)
 {
@@ -144,18 +146,21 @@ function init($szavak)
     $_SESSION['prob'] = 0;
 }
 
-
+/** győzelmek folyamatos frissítése, adatbázisba feltöltése dátummal
+ */
 function update_games($won)
 {
     global $db;
     $user = $_SESSION['user'];
     $today = date("Y-m-d");
-    $sql = $won ?
+    $sql = $won ? // két kimenetnél használják
         "INSERT INTO games values('$user','$today',1,0)" :
         "INSERT INTO games values('$user','$today',0,1)";
     mysqli_query($db, $sql);
 }
 
+/** napi- és örök rekord táblázatba rendezése
+ */
 function print_scores($daily)
 {
     $records = get_stats($daily);
@@ -169,23 +174,27 @@ function print_scores($daily)
     print "</TABLE><P>";
 }
 
+/** napi- és örök rekord lekérdezése
+ */
 function get_stats($daily)
 {
     global $db;
     $today = date("Y-m-d");
     $condition = $daily ? "where day=STR_TO_DATE('{$today}','%Y-%m-%d') " : "";
-    $sql = "select username, SUM(WON) as wins ,SUM(LOST)+SUM(WON) as total from games {$condition}group by username";
+    $sql = "select username, SUM(WON) as wins ,SUM(LOST)+SUM(WON) as total from games {$condition}group by username"; // felhasználónév, győzelmek, nyerési arány
 
     $result = mysqli_query($db, $sql);
     $records = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $records[] = [$row['username'], $row['wins'], $row['total']];
     }
-    usort($records, 'cmp_stats');
+    usort($records, 'cmp_stats'); // nyerési arány szerinti sorrendbe rendezés
     return $records;
 }
 
-function cmp_stats($a, $b) # nyerési arány szerint
+/** nyerési arány szerinti sorrendbe rendezés
+ */
+function cmp_stats($a, $b)
 {
     $r1 = $a[1] / $a[2];
     $r2 = $b[1] / $b[2];
