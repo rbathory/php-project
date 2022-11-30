@@ -1,6 +1,6 @@
 <?php
 SESSION_start();
-require "functions.php"; // másik php-hez csatlakozás
+require "functions.php"; // másik php beolvasása
 
 mysqli_report(MYSQLI_REPORT_STRICT);
 
@@ -90,8 +90,8 @@ if (isset($_POST["submit"])) // beküldök egy tippet
             if ($has == $szo) {
                 print 'Kitaláltad a keresett szót :)' . '<br>';
                 $_SESSION['gyozelmek'] =+1 ; // győzelmek számának növelése
-                update_games(true); //
-                $done = true; // győzelemnél 1 értéket ír az adatbázisba
+                update_games(true); // győzelemnél 1 értéket ír az adatbázisba
+                $done = true;
 
             }
         } else {
@@ -153,7 +153,7 @@ function update_games($won)
     global $db;
     $user = $_SESSION['user'];
     $today = date("Y-m-d");
-    $sql = $won ? // két kimenetnél használják
+    $sql = $won ? // gyózelem vagy veszteség
         "INSERT INTO games values('$user','$today',1,0)" :
         "INSERT INTO games values('$user','$today',0,1)";
     mysqli_query($db, $sql);
@@ -163,7 +163,7 @@ function update_games($won)
  */
 function print_scores($daily)
 {
-    $records = get_stats($daily);
+    $records = get_stats($daily); // melyiket ?
     $type = $daily ? "Napi" : "Örök";
 
     print "<H3>$type rangsor</H3>";
@@ -180,7 +180,7 @@ function get_stats($daily)
 {
     global $db;
     $today = date("Y-m-d");
-    $condition = $daily ? "where day=STR_TO_DATE('{$today}','%Y-%m-%d') " : "";
+    $condition = $daily ? "where day=STR_TO_DATE('{$today}','%Y-%m-%d') " : ""; // napi szűrő hozzáadása ha kell
     $sql = "select username, SUM(WON) as wins ,SUM(LOST)+SUM(WON) as total from games {$condition}group by username"; // felhasználónév, győzelmek, nyerési arány
 
     $result = mysqli_query($db, $sql);
@@ -188,11 +188,11 @@ function get_stats($daily)
     while ($row = mysqli_fetch_assoc($result)) {
         $records[] = [$row['username'], $row['wins'], $row['total']];
     }
-    usort($records, 'cmp_stats'); // nyerési arány szerinti sorrendbe rendezés
+    usort($records, 'cmp_stats'); // nyerési arány szerinti sorrendbe rendezés spéci függvénnyel
     return $records;
 }
 
-/** nyerési arány szerinti sorrendbe rendezés
+/** nyerési arány szerinti sorba rendező
  */
 function cmp_stats($a, $b)
 {

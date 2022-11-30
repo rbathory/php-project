@@ -35,10 +35,10 @@ if (isset($_POST['add'])) { // új felhasználó adat hozzáadás
 }
 
 
-if (isset($_POST['del']) == 'true') { // felhasználó törlése lehetséges e
-    if (!user_exist($_POST['user'])) {
+if (isset($_POST['del']) == 'true') {  // felhasználó törlés művelet
+    if (!user_exist($_POST['user'])) {// lehetséges?
         set_error_message("Nincs ilyen felhasználó ");
-    } elseif ($_POST['user'] == $_SESSION['user']) { # ön törlés nem lehetséges
+    } elseif ($_POST['user'] == $_SESSION['user']) { # ön-törlés nem lehetséges
         set_error_message("Felhasználó nem törölhető ");
     } else {
         delete_user($_POST['user']);
@@ -81,7 +81,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     print('</FORM></TR>');
 }
 
-// új felhasználó hozzáadása táblázat
+// új felhasználó hozzáadása form
 print '</TABLE>';
 print '<H2>Új felhasználó létrehozása:</H2>';
 print '<FORM autocomplete="off" method="POST">
@@ -136,7 +136,7 @@ function delete_user($username)
     }
 }
 
-/** role választás (az alap az eredeti beállított)
+/** role választás
  */
 function print_role($selected)
 {
@@ -144,7 +144,7 @@ function print_role($selected)
     print '<select id="role" name="role">';
     foreach ($ROLES as $role => $display_name) {
         if ($role == $selected) {
-            print "<option value='$role' selected='true'>$display_name</option>";
+            print "<option value='$role' selected='true'>$display_name</option>"; //a kiválasztot a megadott
         } else {
             print "<option value='$role'>$display_name</option>";
         }

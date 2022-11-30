@@ -55,7 +55,7 @@ function print_login_form()
 </FORM></Center>';
 }
 
-/** átirányítás
+/** átirányítás az alapértelmezett oldalra
  */
 function goto_default()
 {
